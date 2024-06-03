@@ -1,0 +1,15 @@
+{
+  "name": "video-call-signaling",
+  "version": "1.0.0",
+  "description": "WebRTC Video Call Signaling Server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "ws": "^7.4.6"
+  },
+  "author": "",
+  "license": "ISC"
+}
