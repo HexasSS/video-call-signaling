@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     const connectSocket = () => {
-        const ngrokUrl = 'dd1a-157-10-185-254.ngrok-free.app'; // Ganti dengan subdomain ngrok yang dihasilkan
+        const ngrokUrl = '0f66-157-10-185-254.ngrok-free.app'; // Ganti dengan subdomain ngrok yang dihasilkan
 
         socket = new WebSocket(`wss://${ngrokUrl}`);
         console.log(`WebSocket menghubungkan ke wss://${ngrokUrl}`);
