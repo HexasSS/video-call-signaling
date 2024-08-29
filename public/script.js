@@ -14,14 +14,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const callerIdSpan = document.getElementById('callerId');
     const acceptCallButton = document.getElementById('acceptCall');
     const rejectCallButton = document.getElementById('rejectCall');
-
+    
     let localStream;
     let peerConnection;
     let socket;
     let myId;
     let targetId;
     let callerId;
-
+    
     const servers = {
         iceServers: [
             {
@@ -32,9 +32,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const initializeLocalStream = async () => {
         try {
-            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
             localVideo.srcObject = localStream;
-            videoTrack.muted = true;
             console.log('Stream lokal diperoleh');
         } catch (error) {
             console.error('Kesalahan mengakses media lokal:', error);
@@ -69,7 +68,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     const connectSocket = () => {
-        const ngrokUrl = '0f66-157-10-185-254.ngrok-free.app'; // Ganti dengan subdomain ngrok yang dihasilkan
+        const ngrokUrl = 'https://26c0-104-28-204-164.ngrok-free.app '; // Ganti dengan subdomain ngrok yang dihasilkan
 
         socket = new WebSocket(`wss://${ngrokUrl}`);
         console.log(`WebSocket menghubungkan ke wss://${ngrokUrl}`);
@@ -218,4 +217,5 @@ document.addEventListener('DOMContentLoaded', async () => {
             socket.close();
         }
     });
+    
 });

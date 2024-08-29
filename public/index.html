@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Language Video Call</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
+    
 </head>
 <body>
     <header>
@@ -41,6 +44,7 @@
                     <button id="rejectCall">Reject</button>
                 </div>
             </div>
+            <canvas id="poseCanvas"></canvas>
         </section>
     </main>
 
