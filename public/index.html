@@ -26,8 +26,14 @@
             <h1>Welcome to Sign Language Video Call</h1>
             <p>Connect with others using sign language through video calls.</p>
             <div id="video-call">
+                <button id="webcamButton" class="mdc-button mdc-button--raised">
+                    <span class="mdc-button__ripple"></span>
+                    <span class="mdc-button__label">ENABLE WEBCAM</span>
+                  </button>
                 <div id="localVideoContainer">
                     <video id="localVideo" autoplay playsinline muted></video>
+                    <canvas class="output_canvas" id="output_canvas" style="position: absolute; left: 0px; top: 0px;"></canvas>
+                    <p id='gesture_output' class="output">
                 </div>
                 <div id="remoteVideoContainer">
                     <video id="remoteVideo" autoplay playsinline></video>
@@ -51,7 +57,7 @@
     <footer>
         <p>&copy; 2024 Sign Language Video Call. All rights reserved.</p>
     </footer>
-
+    <script type="module" src="./detect.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
