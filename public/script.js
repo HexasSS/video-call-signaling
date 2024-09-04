@@ -10,18 +10,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const endCallButton = document.getElementById('endCall');
     const targetIdInput = document.getElementById('targetIdInput');
     const myIdDisplay = document.getElementById('myIdDisplay');
-    const incomingCallDiv = document.getElementById('incomingCall');
-    const callerIdSpan = document.getElementById('callerId');
-    const acceptCallButton = document.getElementById('acceptCall');
-    const rejectCallButton = document.getElementById('rejectCall');
-    
+
     let localStream;
     let peerConnection;
     let socket;
     let myId;
     let targetId;
-    let callerId;
-    
+
     const servers = {
         iceServers: [
             {
@@ -30,9 +25,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         ]
     };
 
+    const triggerSignAnimation = (text) => {
+        console.log('Memeriksa teks untuk animasi bahasa isyarat:', text);
+        if (text.toLowerCase().includes('halo')) {
+            document.getElementById('signVideo').src = 'path/to/halo.mp4';
+        } else if (text.toLowerCase().includes('selamat')) {
+            document.getElementById('signVideo').src = 'path/to/selamat.mp4';
+        } else {
+            console.log('Tidak ada video bahasa isyarat yang cocok untuk teks ini.');
+        }
+    };
+
     const initializeLocalStream = async () => {
         try {
-            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             localVideo.srcObject = localStream;
             console.log('Stream lokal diperoleh');
         } catch (error) {
@@ -42,15 +48,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     const initializePeerConnection = () => {
-        if (!localStream) {
-            console.error('localStream belum diinisialisasi');
-            return;
-        }
-
         peerConnection = new RTCPeerConnection(servers);
 
         peerConnection.onicecandidate = event => {
             if (event.candidate) {
+                console.log('ICE candidate ditemukan:', event.candidate);
                 socket.send(JSON.stringify({ ice: event.candidate, targetId }));
                 console.log('ICE candidate dikirim:', event.candidate);
             }
@@ -68,10 +70,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     const connectSocket = () => {
-        const ngrokUrl = 'https://26c0-104-28-204-164.ngrok-free.app '; // Ganti dengan subdomain ngrok yang dihasilkan
+        const signalingUrl = 'https://bfe9-114-79-6-123.ngrok-free.app'; // Ganti dengan subdomain ngrok yang dihasilkan
 
-        socket = new WebSocket(`wss://${ngrokUrl}`);
-        console.log(`WebSocket menghubungkan ke wss://${ngrokUrl}`);
+        socket = new WebSocket(signalingUrl);
+        console.log(`WebSocket menghubungkan ke ${signalingUrl}`);
 
         socket.onopen = () => {
             console.log('Terhubung ke server signaling');
@@ -79,7 +81,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         socket.onmessage = async (message) => {
             const data = JSON.parse(message.data);
-            console.log('Pesan dari server:', data);
+            console.log('Pesan dari server:', data);    
 
             if (data.id) {
                 myId = data.id;
@@ -87,16 +89,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.log('ID saya disetel:', myId);
             }
 
-            if (data.type === 'offer') {
-                callerId = data.fromId;
-                callerIdSpan.textContent = callerId;
-                incomingCallDiv.style.display = 'block';
-                console.log('Panggilan masuk dari:', callerId);
-            }
-
-            if (data.fromId && !targetId) {
-                targetId = data.fromId;
-                console.log('ID target disetel:', targetId);
+            if (data.type === 'textToVideo') {
+                console.log('Pesan text to video diterima:', data.text);
+                triggerSignAnimation(data.text); 
             }
 
             if (data.sdp) {
@@ -121,15 +116,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                         console.error('Kesalahan memproses SDP:', error);
                     }
                 } else if (data.sdp.type === 'answer' && peerConnection) {
-                    if (peerConnection.signalingState === "have-local-offer") {
-                        try {
-                            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
-                            console.log('Remote SDP disetel:', data.sdp);
-                        } catch (error) {
-                            console.error('Kesalahan menyetel remote description:', error);
-                        }
-                    } else {
-                        console.error('Signaling state tidak valid untuk setRemoteDescription dengan answer:', peerConnection.signalingState);
+                    try {
+                        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                        console.log('Remote SDP disetel setelah answer:', data.sdp);
+                    } catch (error) {
+                        console.error('Kesalahan menyetel remote description:', error);
                     }
                 }
             } else if (data.ice) {
@@ -157,7 +148,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     connectSocket();
-
     await initializeLocalStream();
     initializePeerConnection();
 
@@ -179,33 +169,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    acceptCallButton.addEventListener('click', async () => {
-        incomingCallDiv.style.display = 'none';
-        try {
-            if (!peerConnection) {
-                initializePeerConnection();
-            }
-
-            if (peerConnection.signalingState === "have-remote-offer") {
-                const answer = await peerConnection.createAnswer();
-                await peerConnection.setLocalDescription(answer);
-                socket.send(JSON.stringify({ sdp: answer, targetId: callerId }));
-                console.log('Jawaban dikirim:', answer);
-            } else {
-                console.error('Signaling state tidak valid untuk createAnswer:', peerConnection.signalingState);
-            }
-        } catch (error) {
-            console.error('Kesalahan menerima panggilan:', error);
-            alert('Kesalahan menerima panggilan: ' + error.message);
-        }
-    });
-
-    rejectCallButton.addEventListener('click', () => {
-        incomingCallDiv.style.display = 'none';
-        socket.send(JSON.stringify({ type: 'reject', targetId: callerId }));
-        console.log('Panggilan ditolak');
-    });
-
     endCallButton.addEventListener('click', () => {
         if (peerConnection) {
             peerConnection.close();
@@ -217,5 +180,4 @@ document.addEventListener('DOMContentLoaded', async () => {
             socket.close();
         }
     });
-    
 });
