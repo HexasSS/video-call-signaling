@@ -1,79 +1,105 @@
+// Import necessary modules from MediaPipe
 import { GestureRecognizer, FilesetResolver, DrawingUtils } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
 
+// Elements references
+const demosSection = document.getElementById("demos");
 let gestureRecognizer;
 let runningMode = "IMAGE";
-let detectionRunning = false;
+let enableWebcamButton;
+let webcamRunning = false;
 const videoHeight = "360px";
 const videoWidth = "480px";
-const remoteVideo = document.getElementById("remoteVideo"); // Use existing remoteVideo
 
-// Before we can use GestureRecognizer, we must wait for it to finish loading.
+// Initialize Gesture Recognizer
 const createGestureRecognizer = async () => {
-    try {
-        console.log('Initializing Gesture Recognizer...');
-        const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm");
-        gestureRecognizer = await GestureRecognizer.createFromOptions(vision, {
-            baseOptions: {
-                modelAssetPath: "sibi.task",
-                delegate: "GPU"
-            },
-            runningMode: runningMode
-        });
-        console.log('Gesture Recognizer initialized.');
-    } catch (error) {
-        console.error("Error initializing GestureRecognizer:", error);
-    }
+    const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm");
+    gestureRecognizer = await GestureRecognizer.createFromOptions(vision, {
+        baseOptions: {
+            modelAssetPath: "sibi.task",
+            delegate: "GPU"
+        },
+        runningMode: runningMode
+    });
+    demosSection.classList.remove("invisible");
 };
 createGestureRecognizer();
 
-const toggleDetection = async () => {
+// Demo: Continuously grab image from remote video stream and detect it.
+const video = document.getElementById("remoteVideo");  // Use remoteVideo element
+const canvasElement = document.getElementById("output_canvas");
+const canvasCtx = canvasElement.getContext("2d");
+const gestureOutput = document.getElementById("gesture_output");
+
+// Check if webcam access is supported.
+function hasGetUserMedia() {
+    return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+}
+
+// If webcam supported, add event listener to button for when user wants to activate it.
+if (hasGetUserMedia()) {
+    enableWebcamButton = document.getElementById("webcamButton");
+    enableWebcamButton.addEventListener("click", enableCam);
+} else {
+    console.warn("getUserMedia() is not supported by your browser");
+}
+
+// Enable the live webcam view and start detection.
+function enableCam(event) {
     if (!gestureRecognizer) {
         alert("Please wait for gestureRecognizer to load");
         return;
     }
-    
-    detectionRunning = !detectionRunning;
-    const buttonText = detectionRunning ? "DISABLE DETECTION" : "ENABLE DETECTION";
-    document.getElementById("toggleDetectionButton").innerText = buttonText;
 
-    if (detectionRunning) {
-        console.log('Starting detection...');
-        remoteVideo.addEventListener("loadeddata", predictWebcam);
-        remoteVideo.play();
+    webcamRunning = !webcamRunning;
+    enableWebcamButton.innerText = webcamRunning ? "DISABLE PREDICTIONS" : "ENABLE PREDICTIONS";
+
+    if (webcamRunning) {
+        // Get user media and set it to remote video element
+        const constraints = {
+            video: true
+        };
+        navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
+            video.srcObject = stream;  // Attach stream to remoteVideo
+            video.addEventListener("loadeddata", predictWebcam);
+        });
     } else {
-        console.log('Stopping detection...');
-        const stream = remoteVideo.srcObject;
+        // Stop video stream
+        const stream = video.srcObject;
         if (stream) {
             const tracks = stream.getTracks();
             tracks.forEach(track => track.stop());
-            remoteVideo.srcObject = null;
+            video.srcObject = null;
         }
     }
-};
+}
 
+let lastVideoTime = -1;
+let results = undefined;
+
+// Function to handle gesture detection from the remote video
 async function predictWebcam() {
+    // Set to running mode VIDEO
     if (runningMode === "IMAGE") {
         runningMode = "VIDEO";
         await gestureRecognizer.setOptions({ runningMode: "VIDEO" });
     }
 
     let nowInMs = Date.now();
-    const results = await gestureRecognizer.recognizeForVideo(remoteVideo, nowInMs);
+    if (video.currentTime !== lastVideoTime) {
+        lastVideoTime = video.currentTime;
+        results = await gestureRecognizer.recognizeForVideo(video, nowInMs);
+    }
 
-    console.log('Recognition results:', results);
-
-    const canvasElement = document.getElementById("output_canvas");
-    const canvasCtx = canvasElement.getContext("2d");
-    const gestureOutput = document.getElementById("gesture_output");
-
+    // Clear and set canvas dimensions
     canvasCtx.save();
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
     const drawingUtils = new DrawingUtils(canvasCtx);
     canvasElement.style.height = videoHeight;
-    remoteVideo.style.height = videoHeight;
+    video.style.height = videoHeight;
     canvasElement.style.width = videoWidth;
-    remoteVideo.style.width = videoWidth;
+    video.style.width = videoWidth;
 
+    // Draw detected landmarks and connectors
     if (results.landmarks) {
         for (const landmarks of results.landmarks) {
             drawingUtils.drawConnectors(landmarks, GestureRecognizer.HAND_CONNECTIONS, {
@@ -88,6 +114,8 @@ async function predictWebcam() {
     }
 
     canvasCtx.restore();
+
+    // Display gesture output
     if (results.gestures.length > 0) {
         gestureOutput.style.display = "block";
         gestureOutput.style.width = videoWidth;
@@ -99,9 +127,8 @@ async function predictWebcam() {
         gestureOutput.style.display = "none";
     }
 
-    if (detectionRunning) {
+    // Continue predicting if webcam is running
+    if (webcamRunning) {
         window.requestAnimationFrame(predictWebcam);
     }
 }
-
-document.getElementById("toggleDetectionButton").addEventListener("click", toggleDetection);
