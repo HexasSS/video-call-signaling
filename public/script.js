@@ -19,8 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let socket;
     let myId;
     let targetId;
-    let callerId;
-    
+
     const servers = {
         iceServers: [
             {
@@ -98,6 +97,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const initializeLocalStream = async () => {
         try {
             localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             localVideo.srcObject = localStream;
             console.log('Stream lokal diperoleh');
         } catch (error) {
@@ -138,6 +138,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         socket = new WebSocket(signalingUrl);
         console.log(`WebSocket menghubungkan ke ${signalingUrl}`);
+        socket = new WebSocket(signalingUrl);
+        console.log(`WebSocket menghubungkan ke ${signalingUrl}`);
 
         socket.onopen = () => {
             console.log('Terhubung ke server signaling');
@@ -145,6 +147,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         socket.onmessage = async (message) => {
             const data = JSON.parse(message.data);
+            console.log('Pesan dari server:', data);    
             console.log('Pesan dari server:', data);    
 
             if (data.id) {
@@ -189,6 +192,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                         console.error('Kesalahan memproses SDP:', error);
                     }
                 } else if (data.sdp.type === 'answer' && peerConnection) {
+                    try {
+                        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                        console.log('Remote SDP disetel setelah answer:', data.sdp);
+                    } catch (error) {
+                        console.error('Kesalahan menyetel remote description:', error);
                     try {
                         await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
                         console.log('Remote SDP disetel setelah answer:', data.sdp);

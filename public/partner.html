@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Language Video Call</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3"></script>
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="features.html">Features</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section id="home">
+            <h1>Welcome to Sign Language Video Call</h1>
+            <p>Connect with others using sign language through video calls.</p>
+            <div id="mainContainer">
+                <div id="leftContainer">
+                    <div id="video-call">
+                        <button id="webcamButton">ENABLE DETECTION</button>
+                        
+                        <div id="speechRecognition">
+                            <p id="speechOutput"></p>
+                            <button id="startSpeech">Mulai Pengenalan Suara</button>
+                            <button id="stopSpeech">Hentikan Pengenalan Suara</button>
+                        </div>
+                        <div id="localVideoContainer">
+                            <video id="localVideo" autoplay playsinline muted></video>
+                        </div>
+                        <div id="remoteVideoContainer">
+                            <video id="remoteVideo" autoplay playsinline></video>
+                            <canvas class="output_canvas" id="output_canvas"></canvas>
+                            <p id="gesture_output" class="output"></p>
+                        </div>
+                        <div id="userIDSection">
+                            <p>Your ID: <span id="myIdDisplay"></span></p>
+                            <input type="text" id="targetIdInput" placeholder="Enter Target ID">
+                        </div>
+                        <div id="callControls">
+                            <button id="startCall">Start Call</button>
+                            <button id="endCall">End Call</button>
+                            <button id="acceptCall" style="display: none;">Accept Call</button>
+                            <button id="rejectCall" style="display: none;">Reject Call</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="rightContainer">
+                    <div id="signLanguageDisplay">
+                        <video id="signVideo" controls autoplay muted style="width: 400px; height: auto;"></video>
+                    </div>
+                </div>
+            </div>
+            <canvas id="poseCanvas"></canvas>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Sign Language Video Call. All rights reserved.</p>
+    </footer>
+    <script type="module" src="./detectlawan.js"></script>
+    <script type="module" src="./speech.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
