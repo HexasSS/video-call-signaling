@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Language Video Call</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
-    
 </head>
 <body>
     <header>
@@ -22,42 +19,18 @@
     </header>
 
     <main>
-        <section id="home">
+        <section id="choice">
             <h1>Welcome to Sign Language Video Call</h1>
-            <p>Connect with others using sign language through video calls.</p>
-            <div id="video-call">
-                <button id="webcamButton" class="mdc-button mdc-button--raised">
-                    <span class="mdc-button__ripple"></span>
-                    <span class="mdc-button__label">ENABLE WEBCAM</span>
-                  </button>
-                <div id="localVideoContainer">
-                    <video id="localVideo" autoplay playsinline muted></video>
-                    <canvas class="output_canvas" id="output_canvas" style="position: absolute; left: 0px; top: 0px;"></canvas>
-                    <p id='gesture_output' class="output">
-                </div>
-                <div id="remoteVideoContainer">
-                    <video id="remoteVideo" autoplay playsinline></video>
-                </div>
-                <div>
-                    <p>Your ID: <span id="myIdDisplay"></span></p>
-                    <input type="text" id="targetIdInput" placeholder="Enter Target ID">
-                    <button id="startCall">Start Call</button>
-                    <button id="endCall">End Call</button>
-                </div>
-                <div id="incomingCall" style="display: none;">
-                    <p>Incoming call from <span id="callerId"></span></p>
-                    <button id="acceptCall">Accept</button>
-                    <button id="rejectCall">Reject</button>
-                </div>
+            <p>Please select your user type:</p>
+            <div style="display: flex; justify-content: center; gap: 2rem;">
+                <a href="hearing.html" style="padding: 1rem 2rem; background-color: #ff6f00; color: #fff; text-decoration: none; font-weight: bold;">I Can Hear</a>
+                <a href="deaf.html" style="padding: 1rem 2rem; background-color: #ff6f00; color: #fff; text-decoration: none; font-weight: bold;">I Can't Hear</a>
             </div>
-            <canvas id="poseCanvas"></canvas>
         </section>
     </main>
 
     <footer>
         <p>&copy; 2024 Sign Language Video Call. All rights reserved.</p>
     </footer>
-    <script type="module" src="./detect.js"></script>
-    <script src="script.js"></script>
 </body>
 </html>

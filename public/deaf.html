@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Language Video Call - For Deaf People</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="features.html">Features</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section id="home">
+            <h1>Sign Language Video Call - Deaf</h1>
+            <p>Use gesture detection to communicate during video calls.</p>
+            <div id="mainContainer">
+                <!-- Bagian kiri: Video Call dan Gesture Detection -->
+                <div id="leftContainer">
+                    <button id="webcamButton">ENABLE GESTURE DETECTION</button>
+
+                    <!-- Kontainer untuk video lokal dan remote -->
+                    <div id="videoCallControls">
+                        <div id="localVideoContainer" style="position:relative;">
+                            <video id="localVideo" autoplay playsinline muted></video>
+                            <canvas id="output_canvas"></canvas>
+                        </div>
+                        
+                        <!-- Tambahkan video remote untuk lawan bicara -->
+                        <div id="remoteVideoContainer">
+                            <video id="remoteVideo" autoplay playsinline></video>
+                        </div>
+
+                        <!-- User ID dan input Target ID -->
+                        <div id="userIDSection">
+                            <p>Your ID: <span id="myIdDisplay">-</span></p> <!-- Menampilkan User ID -->
+                            <input type="text" id="targetIdInput" placeholder="Enter Target ID"> <!-- Input ID Target -->
+                        </div>
+
+                        <!-- Tombol untuk kontrol panggilan -->
+                        <div id="callControls">
+                            <button id="startCall">Start Call</button>
+                            <button id="endCall">End Call</button>
+                        </div>
+
+                        <p id='gesture_output' class="output"></p>
+                    </div>
+
+                    <!-- Bagian kanan: Hasil Deteksi Gesture -->
+                    <div id="rightContainer">
+                        <table id="gestureTable">
+                            <thead>
+                                <tr>
+                                    <th>Gesture</th>
+                                    <th>Confidence (%)</th>
+                                    <th>Handedness</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td id="gestureName">-</td>
+                                    <td id="gestureConfidence">-</td>
+                                    <td id="gestureHandedness">-</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Bagian kanan: Hasil Deteksi Gesture -->
+                <div id="signLanguageDisplay">
+                    <video id="signVideo" controls autoplay muted style="width: 400px; height: auto;"></video>
+                    <img id="signImage" style="display:none; width: 400px; height: auto;" />
+                </div>
+            </div>
+            
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Sign Language Video Call. All rights reserved.</p>
+    </footer>
+
+    <script type="module" src="./detect.js"></script>
+    <script type="module" src="./script.js"></script>
+</body>
+
+</html>

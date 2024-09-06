@@ -8,12 +8,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const remoteVideo = document.getElementById('remoteVideo');
     const startCallButton = document.getElementById('startCall');
     const endCallButton = document.getElementById('endCall');
-    const targetIdInput = document.getElementById('targetIdInput');
-    const myIdDisplay = document.getElementById('myIdDisplay');
-    const incomingCallDiv = document.getElementById('incomingCall');
-    const callerIdSpan = document.getElementById('callerId');
     const acceptCallButton = document.getElementById('acceptCall');
     const rejectCallButton = document.getElementById('rejectCall');
+    const targetIdInput = document.getElementById('targetIdInput');
+    const myIdDisplay = document.getElementById('myIdDisplay');
+    const callerIdSpan = document.getElementById('callerId');
     
     let localStream;
     let peerConnection;
@@ -30,9 +29,75 @@ document.addEventListener('DOMContentLoaded', async () => {
         ]
     };
 
+    const triggerSignAnimation = (text) => {
+        console.log('Triggering sign language animation for text:', text);
+        triggerSignVideos(text);
+    };
+    
+     // Fungsi untuk memutar video/gambar bahasa isyarat satu per satu
+     const triggerSignVideos = (text) => {
+        const words = text.toLowerCase().split(' ');
+        let delay = 0;
+
+        // Memutar video atau menampilkan gambar untuk setiap kata, dengan jeda di antaranya
+        words.forEach((word) => {
+            setTimeout(() => {
+                showSignMedia(word);
+            }, delay);
+            delay += 5000;  // Setiap media (video/gambar) ditampilkan selama 5 detik
+        });
+    };
+
+    // Fungsi untuk menampilkan video atau gambar bahasa isyarat berdasarkan kata atau abjad
+    const showSignMedia = (word) => {
+        signVideo.style.display = 'none';  // Sembunyikan video sebelumnya
+        signImage.style.display = 'none';  // Sembunyikan gambar sebelumnya
+
+        const signMedia = signMapping[word];  // Cari kata di JSON mapping
+
+        if (signMedia) {
+            if (signMedia.type === 'video') {
+                signVideo.src = `videos/${signMedia.file}`;
+                signVideo.style.display = 'block';
+                signVideo.play();  // Mulai memutar video
+                console.log(`Displaying sign video for word: ${word}`);
+            } else if (signMedia.type === 'image') {
+                signImage.src = `images/${signMedia.file}`;
+                signImage.style.display = 'block';  // Tampilkan gambar
+                console.log(`Displaying sign image for word: ${word}`);
+            }
+        } else {
+            console.log(`Word "${word}" not found in mapping, splitting into letters.`);
+            showSignByLetters(word);
+        }
+    };
+
+    // Fungsi untuk menampilkan gambar abjad jika kata tidak ditemukan di mapping
+    const showSignByLetters = (word) => {
+        let delay = 0;
+        const letters = word.split('');
+
+        letters.forEach((letter) => {
+            const lowerCaseLetter = letter.toLowerCase();
+            setTimeout(() => {
+                const signMedia = signMapping[lowerCaseLetter];  // Cek gambar untuk huruf ini
+
+                if (signMedia && signMedia.type === 'image') {
+                    signImage.src = `images/${signMedia.file}`;
+                    signImage.style.display = 'block';
+                    console.log(`Displaying sign image for letter: ${letter}`);
+                } else {
+                    console.log(`No sign media found for letter: ${letter}`);
+                }
+            }, delay);
+            delay += 2000;  // Jeda 2 detik untuk setiap huruf
+        });
+    };
+
+
     const initializeLocalStream = async () => {
         try {
-            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             localVideo.srcObject = localStream;
             console.log('Stream lokal diperoleh');
         } catch (error) {
@@ -42,19 +107,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     const initializePeerConnection = () => {
-        if (!localStream) {
-            console.error('localStream belum diinisialisasi');
-            return;
-        }
-
         peerConnection = new RTCPeerConnection(servers);
 
         peerConnection.onicecandidate = event => {
             if (event.candidate) {
+                if (!targetId) {
+                    console.error('Target ID tidak ditemukan sebelum mengirim ICE candidate');
+                    return;
+                }
+                console.log('ICE candidate ditemukan:', event.candidate);
                 socket.send(JSON.stringify({ ice: event.candidate, targetId }));
-                console.log('ICE candidate dikirim:', event.candidate);
+                console.log('ICE candidate dikirim ke targetId:', targetId);
             }
         };
+        
 
         peerConnection.ontrack = event => {
             if (event.streams[0]) {
@@ -68,10 +134,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     const connectSocket = () => {
-        const ngrokUrl = 'https://26c0-104-28-204-164.ngrok-free.app '; // Ganti dengan subdomain ngrok yang dihasilkan
+        const signalingUrl = 'wss://a9b9-2a09-bac1-34c0-18-00-2e5-e.ngrok-free.app'; // Ganti dengan subdomain ngrok yang dihasilkan
 
-        socket = new WebSocket(`wss://${ngrokUrl}`);
-        console.log(`WebSocket menghubungkan ke wss://${ngrokUrl}`);
+        socket = new WebSocket(signalingUrl);
+        console.log(`WebSocket menghubungkan ke ${signalingUrl}`);
 
         socket.onopen = () => {
             console.log('Terhubung ke server signaling');
@@ -79,7 +145,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         socket.onmessage = async (message) => {
             const data = JSON.parse(message.data);
-            console.log('Pesan dari server:', data);
+            console.log('Pesan dari server:', data);    
 
             if (data.id) {
                 myId = data.id;
@@ -87,16 +153,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.log('ID saya disetel:', myId);
             }
 
-            if (data.type === 'offer') {
-                callerId = data.fromId;
-                callerIdSpan.textContent = callerId;
-                incomingCallDiv.style.display = 'block';
-                console.log('Panggilan masuk dari:', callerId);
+            if (data.type === 'textToVideo') {
+                console.log('Pesan text to video diterima:', data.text);
+                // Tampilkan video berdasarkan teks yang diterima di sisi lawan bicara
+                triggerSignAnimation(data.text, data.videoUrl); 
             }
 
-            if (data.fromId && !targetId) {
-                targetId = data.fromId;
-                console.log('ID target disetel:', targetId);
+            if (data.type === 'offer') {
+                console.log('Offer diterima dari:', data.fromId);
+                callerId = data.fromId;
+                acceptCallButton.style.display = 'block';  // Tampilkan tombol Accept
+                rejectCallButton.style.display = 'block';  // Tampilkan tombol Reject
+                console.log('Tombol Accept dan Reject ditampilkan');
             }
 
             if (data.sdp) {
@@ -121,15 +189,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                         console.error('Kesalahan memproses SDP:', error);
                     }
                 } else if (data.sdp.type === 'answer' && peerConnection) {
-                    if (peerConnection.signalingState === "have-local-offer") {
-                        try {
-                            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
-                            console.log('Remote SDP disetel:', data.sdp);
-                        } catch (error) {
-                            console.error('Kesalahan menyetel remote description:', error);
-                        }
-                    } else {
-                        console.error('Signaling state tidak valid untuk setRemoteDescription dengan answer:', peerConnection.signalingState);
+                    try {
+                        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                        console.log('Remote SDP disetel setelah answer:', data.sdp);
+                    } catch (error) {
+                        console.error('Kesalahan menyetel remote description:', error);
                     }
                 }
             } else if (data.ice) {
@@ -157,22 +221,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     connectSocket();
-
     await initializeLocalStream();
     initializePeerConnection();
 
     startCallButton.addEventListener('click', async () => {
         try {
-            targetId = targetIdInput.value.trim();
+            targetId = targetIdInput.value.trim(); // Pastikan targetId benar-benar ada
             if (!targetId) {
                 alert('Silakan masukkan ID target.');
                 return;
             }
-
+    
             const offer = await peerConnection.createOffer();
             await peerConnection.setLocalDescription(offer);
             socket.send(JSON.stringify({ type: 'offer', sdp: offer, targetId }));
-            console.log('Tawaran dikirim:', offer);
+            console.log('Tawaran dikirim ke targetId:', targetId);
         } catch (error) {
             console.error('Kesalahan memulai panggilan:', error);
             alert('Kesalahan memulai panggilan: ' + error.message);
@@ -180,7 +243,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     acceptCallButton.addEventListener('click', async () => {
-        incomingCallDiv.style.display = 'none';
         try {
             if (!peerConnection) {
                 initializePeerConnection();
@@ -198,12 +260,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.error('Kesalahan menerima panggilan:', error);
             alert('Kesalahan menerima panggilan: ' + error.message);
         }
+
+        acceptCallButton.style.display = 'none';  // Sembunyikan tombol Accept setelah panggilan diterima
+        rejectCallButton.style.display = 'none';  // Sembunyikan tombol Reject setelah panggilan diterima
     });
 
     rejectCallButton.addEventListener('click', () => {
-        incomingCallDiv.style.display = 'none';
-        socket.send(JSON.stringify({ type: 'reject', targetId: callerId }));
         console.log('Panggilan ditolak');
+        socket.send(JSON.stringify({ type: 'reject', targetId: callerId }));
+
+        acceptCallButton.style.display = 'none';  // Sembunyikan tombol Accept
+        rejectCallButton.style.display = 'none';  // Sembunyikan tombol Reject
     });
 
     endCallButton.addEventListener('click', () => {
@@ -217,5 +284,4 @@ document.addEventListener('DOMContentLoaded', async () => {
             socket.close();
         }
     });
-    
 });
